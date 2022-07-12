@@ -64,11 +64,24 @@ TestMessagePack : UnitTest {
 		this.assertEquals(data[4], 0x0,  "f32");
 		// f64
 		data = MessagePack.encode(12.375);
-		data.debug('data');
 		this.assertEquals(data[0], 0xcb, "f64");
-		// this.assertEquals(data[1], 0x4f, "f32");
-		// this.assertEquals(data[2], 0x80, "f32");
-		// this.assertEquals(data[3], 0x0,  "f32");
-		// this.assertEquals(data[4], 0x0,  "f32");
+		this.assertEquals(data[1], 0x40, "f64");
+		this.assertEquals(data[2], 0x28, "f64");
+		this.assertEquals(data[3], 0xc0, "f64");
+		this.assertEquals(data[4], 0x0,  "f64");
+		this.assertEquals(data[5], 0x0,  "f64");
+		this.assertEquals(data[6], 0x0,  "f64");
+		this.assertEquals(data[7], 0x0,  "f64");
+		this.assertEquals(data[8], 0x0,  "f64");
+		data = MessagePack.encode(-12.375);
+		this.assertEquals(data[0], 0xcb, "f64");
+		this.assertEquals(data[1], 0xc0, "f64");
+		this.assertEquals(data[2], 0x28, "f64");
+		this.assertEquals(data[3], 0xc0, "f64");
+		this.assertEquals(data[4], 0x0,  "f64");
+		this.assertEquals(data[5], 0x0,  "f64");
+		this.assertEquals(data[6], 0x0,  "f64");
+		this.assertEquals(data[7], 0x0,  "f64");
+		this.assertEquals(data[8], 0x0,  "f64");
 	}
 }

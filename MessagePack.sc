@@ -85,6 +85,22 @@ MessagePackEncoder {
 		pos = pos + 4;
 	}
 
+	writeF64 {arg value;
+		var hiWord, loWord;
+		this.checkSize(8);
+		hiWord = value.high32Bits;
+		loWord = value.low32Bits;
+		buffer[pos + 0] = (hiWord >> 24) & 0xff;
+		buffer[pos + 1] = (hiWord >> 16) & 0xff;
+		buffer[pos + 2] = (hiWord >> 8)  & 0xff;
+		buffer[pos + 3] = hiWord & 0xff;
+		buffer[pos + 4] = (loWord >> 24) & 0xff;
+		buffer[pos + 5] = (loWord >> 16) & 0xff;
+		buffer[pos + 6] = (loWord >> 8)  & 0xff;
+		buffer[pos + 7] = loWord & 0xff;
+		pos = pos + 8;
+	}
+
 	encode {arg object;
 		this.reset;
 		this.prEncode(object);
