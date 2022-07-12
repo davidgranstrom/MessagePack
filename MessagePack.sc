@@ -144,7 +144,7 @@ MessagePackEncoder {
 	}
 
 	encodeBoolean {arg object;
-		this.writeU8(object.if(0xc2, 0xc3));
+		this.writeU8(object.if(0xc3, 0xc2));
 	}
 
 	encodeNumber {arg object;

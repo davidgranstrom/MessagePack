@@ -12,9 +12,9 @@ TestMessagePack : UnitTest {
 		data = MessagePack.encode(nil);
 		this.assertEquals(data[0], 0xc0, "nil");
 		data = MessagePack.encode(true);
-		this.assertEquals(data[0], 0xc2, "true");
+		this.assertEquals(data[0], 0xc3, "true");
 		data = MessagePack.encode(false);
-		this.assertEquals(data[0], 0xc3, "false");
+		this.assertEquals(data[0], 0xc2, "false");
 		// fixint
 		data = MessagePack.encode(0, (integerAsFloat: false));
 		this.assertEquals(data[0], 0x0, "fixint");
