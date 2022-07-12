@@ -83,5 +83,45 @@ TestMessagePack : UnitTest {
 		this.assertEquals(data[6], 0x0,  "f64");
 		this.assertEquals(data[7], 0x0,  "f64");
 		this.assertEquals(data[8], 0x0,  "f64");
+		// fixstr
+		data = MessagePack.encode("abc");
+		this.assertEquals(data[0], 0xa3, "fixstr");
+		this.assertEquals(data[1], $a.ascii, "fixstr");
+		this.assertEquals(data[2], $b.ascii, "fixstr");
+		this.assertEquals(data[3], $c.ascii, "fixstr");
+		// str 8
+		data = MessagePack.encode($a.dup(255).join);
+		this.assertEquals(data[0], 0xd9, "str 8");
+		this.assertEquals(data[1], 0xff, "str 8");
+		this.assertEquals(data.size, 0xff + 2, "str 8");
+		// str 16
+		data = MessagePack.encode($a.dup(0xffff).join);
+		this.assertEquals(data[0], 0xda, "str 16");
+		this.assertEquals(data[1], 0xff, "str 16");
+		this.assertEquals(data[2], 0xff, "str 16");
+		this.assertEquals(data.size, 0xffff + 3, "str 8");
+		// str 32
+		data = MessagePack.encode($a.dup(0x10000).join);
+		this.assertEquals(data[0], 0xdb, "str 32");
+		this.assertEquals(data[1], 0x0, "str 32");
+		this.assertEquals(data[2], 0x1, "str 32");
+		this.assertEquals(data[3], 0x0, "str 32");
+		this.assertEquals(data[4], 0x0, "str 32");
+		this.assertEquals(data.size, 0x10000 + 5, "str 32");
+		// unicode test
+		data = MessagePack.encode("åäö");
+		this.assertEquals(data[0], 0xa6, "utf-8");
+		this.assertEquals(data[1], 0xc3, "utf-8");
+		this.assertEquals(data[2], 0xa5, "utf-8");
+		this.assertEquals(data[3], 0xc3, "utf-8");
+		this.assertEquals(data[4], 0xa4, "utf-8");
+		this.assertEquals(data[5], 0xc3, "utf-8");
+		this.assertEquals(data[6], 0xb6, "utf-8");
+		data = MessagePack.encode("🎹");
+		this.assertEquals(data[0], 0xa4, "utf-8");
+		this.assertEquals(data[1], 0xf0, "utf-8");
+		this.assertEquals(data[2], 0x9f, "utf-8");
+		this.assertEquals(data[3], 0x8e, "utf-8");
+		this.assertEquals(data[4], 0xb9, "utf-8");
 	}
 }

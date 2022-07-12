@@ -3,7 +3,7 @@
 MessagePack {
 	classvar <>defaultInitialSize = 2048;
 	classvar <>defaultMaxDepth = 100;
-	classvar <maxSize = 4294967295.0;
+	classvar <maxSize = 4294967296.0; // 2^32
 
 	*encode {arg object, options;
 		^MessagePackEncoder(options).encode(object);
@@ -47,7 +47,7 @@ MessagePackEncoder {
 	}
 
 	checkSize {arg size;
-		if (pos + size > buffer.size) {
+		while { pos + size > buffer.size } {
 			buffer = buffer.growClear(initialSize);
 		}
 	}
@@ -99,6 +99,16 @@ MessagePackEncoder {
 		buffer[pos + 6] = (loWord >> 8)  & 0xff;
 		buffer[pos + 7] = loWord & 0xff;
 		pos = pos + 8;
+	}
+
+	writeString {arg value;
+		var bytes;
+		bytes = value.ascii % 0x100;
+		this.checkSize(bytes.size);
+		bytes.do {arg byte;
+			buffer[pos] = byte;
+			pos = pos + 1;
+		};
 	}
 
 	encode {arg object;
@@ -190,12 +200,42 @@ MessagePackEncoder {
 			}
 		} {
 			if (forceFloat32) {
+				// f32
 				this.writeU8(0xca);
 				this.writeF32(object);
 			} {
+				// f64
 				this.writeU8(0xcb);
 				this.writeF64(object);
 			}
+		}
+	}
+
+	encodeString {arg object;
+		var length = object.size;
+		case
+		{ length < 32 } {
+			// fixstr
+			this.writeU8(0xa0 | length);
+			this.writeString(object);
+		}
+		{ length < 0x100 } {
+			// str 8
+			this.writeU8(0xd9);
+			this.writeU8(length);
+			this.writeString(object);
+		}
+		{ length < 0x10000 } {
+			// str 16
+			this.writeU8(0xda);
+			this.writeU16(length);
+			this.writeString(object);
+		}
+		{ length < MessagePack.maxSize } {
+			// str 32
+			this.writeU8(0xdb);
+			this.writeI32(length);
+			this.writeString(object);
 		}
 	}
 
