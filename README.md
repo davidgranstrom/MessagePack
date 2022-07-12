@@ -2,7 +2,36 @@
 
 SuperCollider implementation of the [MessagePack][msgpack] binary serialization format.
 
-## TODO
+## Installation
+
+```supercollider
+Quarks.install("https://github.com/davidgranstrom/MessagePack");
+```
+
+## Usage
+
+**Encode**
+
+```supercollider
+var object = (compact: true, schema: 0);
+var data = MessagePack.encode(object);
+MessagePack.print(data); // [ 82, a7, 63, 6f, 6d, 70, 61, 63, 74, c3, a6, 73, 63, 68, 65, 6d, 61, 00 ]
+```
+
+**Decode**
+```supercollider
+var data = [ 130, 167, 99, 111, 109, 112, 97, 99, 116, 195, 166, 115, 99, 104, 101, 109, 97, 0 ];
+var object = MessagePack.decode(data);
+object.postln; // ( 'compact': true, 'schema': 0 )
+```
+
+## Unit test
+
+```supercollider
+TestMessagePack.run;
+```
+
+## Status
 
 - Encoder
   - [x] Nil
@@ -15,6 +44,8 @@ SuperCollider implementation of the [MessagePack][msgpack] binary serialization 
   - String
     - [x] fixstr
     - [x] str 8/16/32
+  - Bin
+    - [ ] bin 8/16/32
   - Map
     - [x] fixmap
     - [x] map 16/32
@@ -37,7 +68,7 @@ SuperCollider implementation of the [MessagePack][msgpack] binary serialization 
     - [ ] fixmap
     - [ ] map 16/32
   - Array
-    - [ ] fi array
+    - [ ] fixarray
     - [ ] array 16/32
 
 ## License
