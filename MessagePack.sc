@@ -13,11 +13,9 @@ MessagePack {
 		^MessagePackDecoder(data, options);
 	}
 
-	*print {arg data, width = 4;
+	*print {arg data;
 		^data.collect {arg byte;
-			var str = byte.asHexString(width);
-			str[1] = $x;
-			str.toLower;
+			byte.asHexString(2).toLower;
 		};
 	}
 }
@@ -37,7 +35,7 @@ MessagePackEncoder {
 		options = options ? ();
 		initialSize = options.defaultInitialSize ? MessagePack.defaultInitialSize;
 		maxDepth = options.defaultMaxDepth ? MessagePack.defaultMaxDepth;
-		integerAsFloat = options.integerAsFloat ? true;
+		integerAsFloat = options.integerAsFloat ? false;
 		forceFloat32 = options.forceFloat32 ? false;
 	}
 
@@ -132,8 +130,8 @@ MessagePackEncoder {
 		{ object.isKindOf(Number) } {
 			this.encodeNumber(object);
 		}
-		{ object.isKindOf(String) } {
-			this.encodeString(object);
+		{ object.isKindOf(String) or:{object.isKindOf(Symbol)}} {
+			this.encodeString(object.asString);
 		} {
 			this.encodeObject(object, depth);
 		}
@@ -171,7 +169,7 @@ MessagePackEncoder {
 					this.writeI32(object);
 				}
 				{
-					"No support for uint32/uint64 since Integer is signed 32-bit only (%)".format(object).throw;
+					Error("No support for uint32/uint64 (%)".format(object)).throw;
 				}
 			} {
 				case
@@ -195,7 +193,7 @@ MessagePackEncoder {
 					this.writeI32(object);
 				}
 				{
-					"No support for int64 since Integer is signed 32-bit only (%)".format(object).throw;
+					Error("No support for int64 (%)".format(object)).throw;
 				}
 			}
 		} {
@@ -242,15 +240,38 @@ MessagePackEncoder {
 	encodeObject {arg object, depth;
 		case
 		{ object.isKindOf(Dictionary) } {
-			this.encodeDictionary(object, depth);
+			this.encodeMap(object, depth + 1);
+		}
+		{ object.isKindOf(Array) } {
+
 		}
 	}
 
-	encodeDictionary {arg object, depth;
-		var size = object.size;
-		if (size < 16) {
-
+	encodeMap {arg object, depth;
+		var keys = object.keys.as(Array).sort;
+		var size = keys.size;
+		case
+		{ size < 0x10 } {
+			// fixmap
+			this.writeU8(0x80 | size);
 		}
+		{ size < 0x10000 } {
+			// map 16
+			this.writeU8(0xde);
+			this.writeU16(size);
+		}
+		{ size < MessagePack.maxSize } {
+			// map 32
+			this.writeU8(0xdf);
+			this.writeI32(size);
+		}
+		{
+			Error("Map overflow").throw;
+		};
+		object.keysValuesDo {arg k, v;
+			this.prEncode(k);
+			this.prEncode(v);
+		};
 	}
 }
 
