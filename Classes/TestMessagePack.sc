@@ -143,4 +143,20 @@ TestMessagePack : UnitTest {
 		this.assertEquals(data.size, 589829);
 		this.assertEquals(data[0], 0xdd);
 	}
+
+	test_decodeTypes {
+	    var result = -1;
+	    var data = [0xc0];
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, nil, "nil");
+        data = [0xc2];
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, false, "boolean");
+        data = [0xc3];
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, true, "boolean");
+        data = MessagePack.encode(pi);
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, pi, "float64");
+	}
 }

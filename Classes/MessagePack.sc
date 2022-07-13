@@ -306,12 +306,143 @@ MessagePackEncoder {
 
 MessagePackDecoder {
     var <>options;
+    var integerAsFloat;
 
     *new {arg options;
         ^super.newCopyArgs(options).init;
     }
 
-    decode {
+    init {
+        options = options ? ();
+        integerAsFloat = options.integerAsFloat ? false;
+    }
+
+    readU8 {arg data;
+        ^this.read(data, 1)[0];
+    }
+
+    read {arg data, length;
+        var bytes = [];
+        if (data.isEmpty.not and:{data.size >= length}) {
+            length.do {
+                bytes = bytes.add(data.removeAt(0));
+            };
+        };
+        ^bytes;
+    }
+
+    decode {arg data = [];
+        ^this.prDecode(data);
+    }
+
+    isFloat {arg token;
+        ^token == 0xca or:{ token == 0xcb }
+    }
+
+    prDecode {arg data;
+        var token = data[0];
+        case
+        { token == 0xc0 } {
+            ^nil;
+        }
+        { token == 0xc2 } {
+            ^false;
+        }
+        { token == 0xc3 } {
+            ^true;
+        }
+        { token >= 0x0 and:{ token < 0x80
+          or:{ token >= 0xca and:{ token < 0xd3
+          or:{ token >= 0xe0 and:{ token < 0x100 }}}}}}
+        {
+            ^this.decodeNumber(data);
+        }
+        { token >= 0xa0 and:{ token < 0xc0
+            or:{ token >= 0xd9 and:{ token < 0xdc }}}}
+        {
+            ^this.decodeString(data);
+        }
+        {
+            ^this.decodeObject(data);
+        }
+    }
+
+    decodeNil {arg data;
+        this.readU8(data);
+        ^nil;
+    }
+
+    decodeBoolean {arg data;
+        var value = this.readU8(data);
+        ^value == 0xc3;
+    }
+
+    readFloat32 {arg data;
+        var bytes = this.read(data, 4);
+        var word = (bytes[0] << 24)
+                 | (bytes[1] << 16)
+                 | (bytes[2] << 8)
+                 | bytes[3];
+        ^Float.from32Bits(word);
+    }
+
+    readFloat64 {arg data;
+        var bytes = this.read(data, 8);
+        var hiWord = (bytes[0] << 24)
+                   | (bytes[1] << 16)
+                   | (bytes[2] << 8)
+                   | bytes[3];
+        var loWord = (bytes[4] << 24)
+                   | (bytes[5] << 16)
+                   | (bytes[6] << 8)
+                   | bytes[7];
+        ^Float.from64Bits(hiWord, loWord);
+    }
+
+    decodeNumber {arg data;
+        var token = this.readU8(data);
+        var isFloat = this.isFloat(token);
+        if (isFloat or:{integerAsFloat}) {
+            if (token == 0xca) {
+                ^this.readFloat32(data);
+            } {
+                ^this.readFloat64(data);
+            }
+        } {
+            ^this.readInt32(data);
+        }
+    }
+
+    decodeString {arg data;
 
     }
+
+    decodeObject {arg data;
+        var token = data[0];
+        case
+        {   token >= 0x80 and:{ token < 0x90
+            or:{ token == 0xde
+            or:{ token == 0xdf }}}
+        } {
+            this.decodeMap(data);
+        }
+        { token >= 0x90 and:{ token < 0xa0
+            or:{ token == 0xdc
+            or:{ token == 0xdd }}}
+        } {
+            this.decodeArray(data);
+        }
+        {
+            Error("Could deserialize type: %".format(token)).throw;
+        }
+    }
+
+    decodeMap {arg data;
+
+    }
+
+    decodeArray {arg data;
+
+    }
+
 }
