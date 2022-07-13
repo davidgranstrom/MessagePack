@@ -111,7 +111,7 @@ MessagePackEncoder {
 
 	encode {arg object;
 		this.reset;
-		this.prEncode(object);
+		this.prEncode(object, 1);
 		buffer = buffer.copyRange(0, pos - 1).asInteger;
 		^buffer;
 	}
@@ -132,7 +132,8 @@ MessagePackEncoder {
 		}
 		{ object.isKindOf(String) or:{object.isKindOf(Symbol)}} {
 			this.encodeString(object.asString);
-		} {
+		}
+		{
 			this.encodeObject(object, depth);
 		}
 	}
@@ -240,11 +241,39 @@ MessagePackEncoder {
 	encodeObject {arg object, depth;
 		case
 		{ object.isKindOf(Dictionary) } {
-			this.encodeMap(object, depth + 1);
+			this.encodeMap(object, depth);
 		}
 		{ object.isKindOf(Array) } {
-
+			this.encodeArray(object, depth);
 		}
+		{
+			Error("Could not serialize object type: %".format(object.class)).throw;
+		}
+	}
+
+	encodeArray {arg object, depth;
+		var size = object.size;
+		case
+		{ size < 0x10 } {
+			// fixarray
+			this.writeU8(0x90 | size);
+		}
+		{ size < 0x10000 } {
+			// array 16
+			this.writeU8(0xdc);
+			this.writeU16(size);
+		}
+		{ size < MessagePack.maxSize } {
+			// array 32
+			this.writeU8(0xdd);
+			this.writeI32(size);
+		}
+		{
+			Error("Array overflow").throw;
+		};
+		object.do {arg v;
+			this.prEncode(v, depth + 1);
+		};
 	}
 
 	encodeMap {arg object, depth;
@@ -269,8 +298,8 @@ MessagePackEncoder {
 			Error("Map overflow").throw;
 		};
 		object.keysValuesDo {arg k, v;
-			this.prEncode(k);
-			this.prEncode(v);
+			this.encodeString(k.asString);
+			this.prEncode(v, depth + 1);
 		};
 	}
 }

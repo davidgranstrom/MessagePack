@@ -50,8 +50,8 @@ TestMessagePack.run;
     - [x] fixmap
     - [x] map 16/32
   - Array
-    - [ ] fixarray
-    - [ ] array 16/32
+    - [x] fixarray
+    - [x] array 16/32
 
 - Decoder
   - [ ] Nil

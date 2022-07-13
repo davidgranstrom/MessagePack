@@ -117,7 +117,7 @@ TestMessagePack : UnitTest {
 		this.assertEquals(data[4], 0xb9, "utf-8");
 	}
 
-	test_encodeFixMap {
+	test_encodeMap {
 		var map = (compact: true, schema: 0);
 		var data = MessagePack.encode(map);
 		var expected = "82 a7 63 6f 6d 70 61 63 74 c3 a6 73 63 68 65 6d 61 00".split($ );
@@ -126,5 +126,21 @@ TestMessagePack : UnitTest {
 		expected.do {arg value, i;
 			this.assertEquals(value, test[i]);
 		};
+	}
+
+	test_encodeArray {
+		var values = [1, 2, 3];
+		var data = MessagePack.encode(values);
+		this.assertEquals(data.size, 4);
+		values = (16..1) / 16.0;
+		data = MessagePack.encode(values);
+		this.assertEquals(data.size, 147);
+		this.assertEquals(data[0], 0xdc);
+		this.assertEquals(data[1], 0x0);
+		this.assertEquals(data[2], 0x10);
+		values = (65536..1) / 65536.0;
+		data = MessagePack.encode(values);
+		this.assertEquals(data.size, 589829);
+		this.assertEquals(data[0], 0xdd);
 	}
 }
