@@ -372,7 +372,7 @@ MessagePackDecoder {
     }
 
     decode {arg data = [];
-        ^this.prDecode(data);
+        ^this.prDecode(data.copy);
     }
 
     isNumber {arg token;
