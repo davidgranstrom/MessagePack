@@ -202,4 +202,27 @@ TestMessagePack : UnitTest {
 	    result = MessagePack.decode(data);
 	    this.assertEquals(result, "åäö", "fixstr");
 	}
+
+	test_decodeMap {
+		var map = (compact: true, schema: 0);
+		var data = MessagePack.encode(map);
+		var result = MessagePack.decode(data);
+		this.assertEquals(result[\compact], true);
+		this.assertEquals(result[\schema], 0);
+    }
+
+    test_decodeArray {
+		var array = (1..15);
+		var data = MessagePack.encode(array);
+		var result = MessagePack.decode(data);
+		this.assertEquals(result.size, 15);
+		array = (1..16);
+		data = MessagePack.encode(array);
+		result = MessagePack.decode(data);
+		this.assertEquals(result.size, 16);
+		// array = (1..65536); // works but slow..
+		// data = MessagePack.encode(array);
+		// result = MessagePack.decode(data);
+		// this.assertEquals(result.size, 65536);
+    }
 }

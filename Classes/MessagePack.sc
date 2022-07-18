@@ -42,7 +42,7 @@
 
 MessagePack {
     classvar <>defaultInitialSize = 2048;
-    classvar <>defaultMaxDepth = 100;
+    classvar <>defaultMaxDepth = 256;
     classvar <maxSize = 4294967296.0; // 2^32
 
     *encode {arg object, options;
@@ -73,8 +73,8 @@ MessagePackEncoder {
 
     init {
         options = options ? ();
-        initialSize = options.defaultInitialSize ? MessagePack.defaultInitialSize;
-        maxDepth = options.defaultMaxDepth ? MessagePack.defaultMaxDepth;
+        initialSize = options.initialSize ? MessagePack.defaultInitialSize;
+        maxDepth = options[\maxDepth] ? MessagePack.defaultMaxDepth;
         integerAsFloat = options.integerAsFloat ? false;
         forceFloat32 = options.forceFloat32 ? false;
     }
@@ -158,7 +158,7 @@ MessagePackEncoder {
 
     prEncode {arg object, depth = 1;
         if (depth > maxDepth) {
-            "Too many nested levels".error;
+            Error("Too many nested levels: %".format(depth)).throw;
         };
         case
         { object.isKindOf(Nil) } {
@@ -307,9 +307,6 @@ MessagePackEncoder {
             // array 32
             this.writeU8(0xdd);
             this.writeI32(size);
-        }
-        {
-            Error("Array overflow").throw;
         };
         object.do {arg v;
             this.prEncode(v, depth + 1);
@@ -346,7 +343,8 @@ MessagePackEncoder {
 
 MessagePackDecoder {
     var <>options;
-    var integerAsFloat;
+    var maxDepth;
+    var integerAsFloat, mapAsEvent;
 
     *new {arg options;
         ^super.newCopyArgs(options).init;
@@ -354,7 +352,9 @@ MessagePackDecoder {
 
     init {
         options = options ? ();
+        maxDepth = options[\maxDepth] ? MessagePack.defaultMaxDepth;
         integerAsFloat = options.integerAsFloat ? false;
+        mapAsEvent = options.mapAsEvent ? true;
     }
 
     readU8 {arg data;
@@ -372,7 +372,7 @@ MessagePackDecoder {
     }
 
     decode {arg data = [];
-        ^this.prDecode(data.copy);
+        ^this.prDecode(data.copy, 0);
     }
 
     isNumber {arg token;
@@ -385,8 +385,11 @@ MessagePackDecoder {
         ^token == 0xca or:{ token == 0xcb }
     }
 
-    prDecode {arg data;
+    prDecode {arg data, depth = 0;
         var token = data[0];
+        if (depth > maxDepth) {
+            Error("Too many nested levels: %".format(depth)).throw;
+        };
         case
         { token == 0xc0 } {
             ^this.decodeNil(data);
@@ -403,7 +406,7 @@ MessagePackDecoder {
             ^this.decodeString(data);
         }
         {
-            ^this.decodeObject(data);
+            ^this.decodeObject(data, depth);
         }
     }
 
@@ -439,6 +442,11 @@ MessagePackDecoder {
         ^Float.from64Bits(hiWord, loWord);
     }
 
+    readInt16 {arg data;
+        var bytes = this.read(data, 2);
+        ^(bytes[0] << 8) | bytes[1];
+    }
+
     readInt32 {arg data;
         var bytes = this.read(data, 4);
         ^(bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
@@ -466,8 +474,7 @@ MessagePackDecoder {
             }
             { token == 0xcd } {
                 // uint16
-                bytes = this.read(data, 2);
-                ^(bytes[0] << 8) | bytes[1];
+                ^this.readInt16(data);
             }
             { token == 0xce } {
                 // uint32
@@ -483,8 +490,7 @@ MessagePackDecoder {
             }
             { token == 0xd1 } {
                 // int16
-                bytes = this.read(data, 2);
-                ^((bytes[0] << 8) | bytes[1]) - 0x10000;
+                ^(this.readInt16(data) - 0x10000);
             }
             { token == 0xd2 } {
                 // int32
@@ -518,32 +524,73 @@ MessagePackDecoder {
         ^bytes.collect(_.asAscii).join;
     }
 
-    decodeObject {arg data;
+    decodeObject {arg data, depth;
         var token = data[0];
         case
         {   token >= 0x80 and:{ token < 0x90
             or:{ token == 0xde
             or:{ token == 0xdf }}}
         } {
-            ^this.decodeMap(data);
+            ^this.decodeMap(data, depth);
         }
         { token >= 0x90 and:{ token < 0xa0
             or:{ token == 0xdc
             or:{ token == 0xdd }}}
         } {
-            ^this.decodeArray(data);
+            ^this.decodeArray(data, depth);
         }
         {
             Error("Could not deserialize type: %".format(token)).throw;
         }
     }
 
-    decodeMap {arg data;
-
+    decodeMap {arg data, depth;
+        var token = this.readU8(data);
+        var num, object;
+        var key, value;
+        case
+        { token >= 0x80 and:{ token < 0x90 }} {
+            // fixmap
+            num = token - 0x80;
+        }
+        { token == 0xde } {
+            // map 16
+            num = this.readInt16(data);
+        }
+        { token == 0xdf } {
+            // map 32
+            num = this.readInt32(data);
+        };
+        object = IdentityDictionary.new(num);
+        forBy (0, num, 2) {arg i;
+            key = this.decodeString(data).asSymbol;
+            value = this.prDecode(data, depth + 1);
+            object.put(key, value);
+        }
+        ^object;
     }
 
-    decodeArray {arg data;
-
+    decodeArray {arg data, depth;
+        var token = this.readU8(data);
+        var num, object, value;
+        case
+        { token >= 0x90 and:{ token < 0xa0 }} {
+            // fixarray
+            num = token - 0x90;
+        }
+        { token == 0xdc } {
+            // array 16
+            num = this.readInt16(data);
+        }
+        { token == 0xdd } {
+            // array 32
+            num = this.readInt32(data);
+        };
+        object = Array.new(num);
+        num.do {
+            value = this.prDecode(data, depth + 1);
+            object = object.add(value);
+        };
+        ^object;
     }
-
 }
