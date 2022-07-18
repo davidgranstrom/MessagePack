@@ -268,9 +268,6 @@ MessagePackEncoder {
             // map 32
             this.writeU8(0xdf);
             this.writeI32(size);
-        }
-        {
-            Error("Map overflow").throw;
         };
         object.keysValuesDo {arg k, v;
             this.encodeString(k.asString);

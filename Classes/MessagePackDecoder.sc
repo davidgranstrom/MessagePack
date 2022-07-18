@@ -160,10 +160,7 @@ MessagePackDecoder {
             { token >= 0xe0 and:{ token < 0x100 }} {
                 // negative fixint
                 ^token - 0x100;
-            }
-            {
-                Error("Could not deserialize type: %".format(token)).throw;
-            }
+            };
         }
     }
 
@@ -201,6 +198,30 @@ MessagePackDecoder {
         }
     }
 
+    decodeArray {arg data, depth;
+        var token = this.readU8(data);
+        var num, object, value;
+        case
+        { token >= 0x90 and:{ token < 0xa0 }} {
+            // fixarray
+            num = token - 0x90;
+        }
+        { token == 0xdc } {
+            // array 16
+            num = this.readInt16(data);
+        }
+        { token == 0xdd } {
+            // array 32
+            num = this.readInt32(data);
+        };
+        object = Array.new(num);
+        num.do {
+            value = this.prDecode(data, depth + 1);
+            object = object.add(value);
+        };
+        ^object;
+    }
+
     decodeMap {arg data, depth;
         var token = this.readU8(data);
         var num, object;
@@ -224,30 +245,6 @@ MessagePackDecoder {
             value = this.prDecode(data, depth + 1);
             object.put(key, value);
         }
-        ^object;
-    }
-
-    decodeArray {arg data, depth;
-        var token = this.readU8(data);
-        var num, object, value;
-        case
-        { token >= 0x90 and:{ token < 0xa0 }} {
-            // fixarray
-            num = token - 0x90;
-        }
-        { token == 0xdc } {
-            // array 16
-            num = this.readInt16(data);
-        }
-        { token == 0xdd } {
-            // array 32
-            num = this.readInt32(data);
-        };
-        object = Array.new(num);
-        num.do {
-            value = this.prDecode(data, depth + 1);
-            object = object.add(value);
-        };
         ^object;
     }
 }
