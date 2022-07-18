@@ -117,6 +117,42 @@ TestMessagePack : UnitTest {
 		this.assertEquals(data[4], 0xb9, "utf-8");
 	}
 
+	test_decodeNumber {
+	    var n, data, result;
+	    n = 1;
+	    data = MessagePack.encode(n);
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, n, "fixint");
+	    n = 255;
+	    data = MessagePack.encode(n);
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, n, "uint8");
+	    n = (2 ** 16 - 1).asInteger;
+	    data = MessagePack.encode(n);
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, n, "uint16");
+	    n = -128;
+	    data = MessagePack.encode(n);
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, n, "int8");
+	    n = -32768;
+	    data = MessagePack.encode(n);
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, n, "int16");
+	    n = -2147483648;
+	    data = MessagePack.encode(n);
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, n, "int32");
+	    n = 2 ** 32 - 1;
+	    data = MessagePack.encode(n);
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, n, "float32");
+	    n = 2 ** 64 - 1;
+	    data = MessagePack.encode(n);
+	    result = MessagePack.decode(data);
+	    this.assertEquals(result, n, "float64");
+	}
+
 	test_encodeMap {
 		var map = (compact: true, schema: 0);
 		var data = MessagePack.encode(map);
