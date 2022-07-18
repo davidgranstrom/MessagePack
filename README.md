@@ -19,6 +19,7 @@ MessagePack.print(data); // [ 82, a7, 63, 6f, 6d, 70, 61, 63, 74, c3, a6, 73, 63
 ```
 
 **Decode**
+
 ```supercollider
 var data = [ 130, 167, 99, 111, 109, 112, 97, 99, 116, 195, 166, 115, 99, 104, 101, 109, 97, 0 ];
 var object = MessagePack.decode(data);
