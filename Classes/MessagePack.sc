@@ -389,13 +389,10 @@ MessagePackDecoder {
         var token = data[0];
         case
         { token == 0xc0 } {
-            ^nil;
+            ^this.decodeNil(data);
         }
-        { token == 0xc2 } {
-            ^false;
-        }
-        { token == 0xc3 } {
-            ^true;
+        { token == 0xc2 or:{ token == 0xc3 }} {
+            ^this.decodeBoolean(data);
         }
         { this.isNumber(token) } {
             ^this.decodeNumber(data);
