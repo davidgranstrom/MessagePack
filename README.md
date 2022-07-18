@@ -46,6 +46,9 @@ TestMessagePack.run;
     - [x] str 8/16/32
   - Bin
     - [ ] bin 8/16/32
+  - Ext
+    - [ ] fixext
+    - [ ] ext 8/16/32
   - Map
     - [x] fixmap
     - [x] map 16/32
@@ -54,22 +57,27 @@ TestMessagePack.run;
     - [x] array 16/32
 
 - Decoder
-  - [ ] Nil
-  - [ ] Boolean
+  - [x] Nil
+  - [x] Boolean
   - Number
-    - [ ] positive/negative fixint
-    - [ ] uint 8/16
-    - [ ] int 8/16/32
-    - [ ] float 32/64
+    - [x] positive/negative fixint
+    - [x] uint 8/16
+    - [x] int 8/16/32
+    - [x] float 32/64
   - String
-    - [ ] fixstr
-    - [ ] str 8/16/32
+    - [x] fixstr
+    - [x] str 8/16/32
+  - Bin
+    - [ ] bin 8/16/32
+  - Ext
+    - [ ] fixext
+    - [ ] ext 8/16/32
   - Map
-    - [ ] fixmap
-    - [ ] map 16/32
+    - [x] fixmap
+    - [x] map 16/32
   - Array
-    - [ ] fixarray
-    - [ ] array 16/32
+    - [x] fixarray
+    - [x] array 16/32
 
 ## License
 
