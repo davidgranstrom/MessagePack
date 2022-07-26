@@ -46,9 +46,9 @@ TestMessagePack.run;
     - [x] fixstr
     - [x] str 8/16/32
   - Bin
-    - [ ] bin 8/16/32
+    - [x] bin 8/16/32
   - Ext
-    - [ ] fixext
+    - [x] fixext
     - [ ] ext 8/16/32
   - Map
     - [x] fixmap
@@ -69,9 +69,9 @@ TestMessagePack.run;
     - [x] fixstr
     - [x] str 8/16/32
   - Bin
-    - [ ] bin 8/16/32
+    - [x] bin 8/16/32
   - Ext
-    - [ ] fixext
+    - [x] fixext
     - [ ] ext 8/16/32
   - Map
     - [x] fixmap
