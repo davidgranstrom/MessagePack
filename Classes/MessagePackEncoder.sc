@@ -4,6 +4,7 @@ MessagePackEncoder {
     var integerAsFloat;
     var forceFloat32;
     var buffer, pos;
+    var extensions;
 
     *new {arg options;
         ^super.newCopyArgs(options).init;
@@ -15,6 +16,7 @@ MessagePackEncoder {
         maxDepth = options[\maxDepth] ? MessagePack.defaultMaxDepth;
         integerAsFloat = options.integerAsFloat ? false;
         forceFloat32 = options.forceFloat32 ? false;
+        extensions = MessagePack.extensions.select(_.notNil);
     }
 
     reset {
@@ -225,7 +227,11 @@ MessagePackEncoder {
             this.encodeArray(object, depth);
         }
         {
-            Error("Could not serialize object type: %".format(object.class)).throw;
+            if (extensions.size > 0) {
+                this.encodeExt(object);
+            } {
+                Error("Could not serialize object type: %".format(object.class)).throw;
+            }
         }
     }
 
@@ -272,6 +278,22 @@ MessagePackEncoder {
         object.keysValuesDo {arg k, v;
             this.encodeString(k.asString);
             this.prEncode(v, depth + 1);
+        };
+    }
+
+    encodeExt {arg object;
+        extensions.do {arg ext;
+            var size, data = Int8Array.new;
+            ext.prEncode(object, data);
+            size = data.size;
+            if (size > 0 and:{ size <= 16 and:{ size.isPowerOfTwo }}) {
+                // fixext 1-16
+                this.writeU8(size + 0xd3);
+                this.writeU8(ext.type);
+                size.do {arg i;
+                    this.writeU8(data[i]);
+                };
+            };
         };
     }
 }

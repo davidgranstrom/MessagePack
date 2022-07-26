@@ -225,4 +225,57 @@ TestMessagePack : UnitTest {
         // result = MessagePack.decode(data);
         // this.assertEquals(result.size, 65536);
     }
+
+    test_extensions {
+        var object, data;
+        var ext = MessagePackExt(0, "char");
+        ext.encodeFunc = {arg object, data, encoder;
+            if (object.isKindOf(Char)) {
+                data = data.add(object.ascii);
+            };
+        };
+        ext.decodeFunc = {arg data;
+            if (data.notNil and:{data.size > 0}) {
+                data[0].asAscii;
+            }
+        };
+        MessagePack.registerExtension(ext);
+        ext = MessagePackExt(1, "set");
+        ext.encodeFunc = {arg object, data;
+            if (object.class == Set) {
+                object.do {arg item;
+                    item = MessagePack.encode(item);
+                    item.do {arg it;
+                        data = data.add(it);
+                    };
+                };
+            };
+        };
+        ext.decodeFunc = {arg data;
+            var object = Set.new;
+            data.do {arg item;
+                object.add(item);
+            };
+            object;
+        };
+        MessagePack.registerExtension(ext);
+        data = MessagePack.encode($a);
+        this.assertEquals(data.size, 3);
+        this.assertEquals(data[0], 0xd4);
+        this.assertEquals(data[1], 0);
+        this.assertEquals(data[2], 97);
+        object = MessagePack.decode(data);
+        this.assertEquals(object, $a);
+        object = Set.new;
+        object.add(0);
+        object.add(1);
+        object.add(2);
+        object.add(3);
+        data = MessagePack.encode(object);
+        this.assertEquals(data.size, 6);
+        this.assertEquals(data[0], 0xd6);
+        this.assertEquals(data[1], 1);
+        object = MessagePack.decode(data);
+        this.assertEquals(object.class, Set);
+    }
 }

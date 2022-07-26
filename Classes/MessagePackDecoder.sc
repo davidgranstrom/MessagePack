@@ -57,6 +57,9 @@ MessagePackDecoder {
         { this.isNumber(token) } {
             ^this.decodeNumber(data);
         }
+        { token >= 0xd4 and:{ token < 0xd9 }} {
+            ^this.decodeExt(data);
+        }
         { token >= 0xa0 and:{ token < 0xc0
           or:{ token >= 0xd9 and:{ token < 0xdc }}}}
         {
@@ -162,6 +165,25 @@ MessagePackDecoder {
                 ^token - 0x100;
             };
         }
+    }
+
+    decodeExt {arg data;
+        var token = this.readU8(data);
+        var type, size, bytes = Int8Array.new;
+        var ext;
+        case
+        { token >= 0xd4 and:{ token < 0xd9 }} {
+            // fixext 1-16
+            type = this.readU8(data);
+            size = token - 0xd3;
+            size.do {arg i;
+                bytes = bytes.add(this.readU8(data));
+            };
+        };
+        ext = MessagePack.extensions[type];
+        if (ext.notNil) {
+            ^ext.prDecode(bytes, this);
+        };
     }
 
     decodeString {arg data;
