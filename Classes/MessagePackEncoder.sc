@@ -89,6 +89,14 @@ MessagePackEncoder {
         };
     }
 
+    writeArray {arg bytes;
+        this.checkSize(bytes.size);
+        bytes.do {arg byte;
+            buffer[pos] = byte.wrap(0, 255);
+            pos = pos + 1;
+        };
+    }
+
     encode {arg object;
         this.reset;
         this.prEncode(object, 1);
@@ -112,6 +120,9 @@ MessagePackEncoder {
         }
         { object.isKindOf(String) or:{object.isKindOf(Symbol)}} {
             this.encodeString(object.asString);
+        }
+        { object.isKindOf(Int8Array) } {
+            this.encodeBin(object);
         }
         {
             this.encodeObject(object, depth);
@@ -218,6 +229,24 @@ MessagePackEncoder {
         }
     }
 
+    encodeBin {arg object;
+        var size = object.size;
+        case
+        { size < 0x100 } {
+            this.writeU8(0xc4);
+            this.writeU8(size);
+        }
+        { size < 0x10000 } {
+            this.writeU8(0xc5);
+            this.writeU16(size);
+        }
+        { size < MessagePack.maxSize } {
+            this.writeU8(0xc6);
+            this.writeI32(size);
+        };
+        this.writeArray(object);
+    }
+
     encodeObject {arg object, depth;
         case
         { object.isKindOf(Dictionary) } {
@@ -288,7 +317,12 @@ MessagePackEncoder {
             size = data.size;
             if (size > 0 and:{ size <= 16 and:{ size.isPowerOfTwo }}) {
                 // fixext 1-16
-                this.writeU8(size + 0xd3);
+                switch (size)
+                { 1 } { this.writeU8(0xd4) }
+                { 2 } { this.writeU8(0xd5) }
+                { 4 } { this.writeU8(0xd6) }
+                { 8 } { this.writeU8(0xd7) }
+                { 16 } { this.writeU8(0xd8) };
                 this.writeU8(ext.type);
                 size.do {arg i;
                     this.writeU8(data[i]);

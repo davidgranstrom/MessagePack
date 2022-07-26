@@ -54,6 +54,9 @@ MessagePackDecoder {
         { token == 0xc2 or:{ token == 0xc3 }} {
             ^this.decodeBoolean(data);
         }
+        { token >= 0xc4 and:{ token < 0xc7 }} {
+            ^this.decodeBin(data);
+        }
         { this.isNumber(token) } {
             ^this.decodeNumber(data);
         }
@@ -165,6 +168,25 @@ MessagePackDecoder {
                 ^token - 0x100;
             };
         }
+    }
+
+    decodeBin {arg data;
+        var token = this.readU8(data);
+        var size, bytes, array;
+        case
+        { token == 0xc4 } {
+            size = this.readU8(data);
+        }
+        { token == 0xc5 } {
+            size = this.readInt16(data);
+        }
+        { token == 0xc6 } {
+            size = this.readInt32(data);
+        };
+        bytes = this.read(data, size);
+        array = Int8Array.new;
+        array = array.addAll(bytes);
+        ^array;
     }
 
     decodeExt {arg data;
