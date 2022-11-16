@@ -231,7 +231,7 @@ MessagePackDecoder {
     decodeObject {arg data, depth;
         var token = data[0];
         case
-        {   token >= 0x80 and:{ token < 0x90
+        { token >= 0x80 and:{ token < 0x90
             or:{ token == 0xde
             or:{ token == 0xdf }}}
         } {
@@ -290,7 +290,7 @@ MessagePackDecoder {
             num = this.readInt32(data);
         };
         object = IdentityDictionary.new(num);
-        forBy (0, num, 2) {arg i;
+        num.do {
             key = this.decodeString(data).asSymbol;
             value = this.prDecode(data, depth + 1);
             object.put(key, value);
