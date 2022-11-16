@@ -212,11 +212,17 @@ MessagePackDecoder {
         var token = this.readU8(data);
         var bytes, length;
         case
+        { token >= 0xa0 and:{ token < 0xc0 }} {
+            length = token - 0xa0;
+        }
         { token == 0xd9 } {
             length = this.readU8(data);
         }
-        {
-            length = token - 0xa0;
+        { token == 0xda } {
+            length = this.readInt16(data);
+        }
+        { token == 0xdb } {
+            length = this.readInt32(data);
         };
         bytes = this.read(data, length);
         ^bytes.collect(_.asAscii).join;
